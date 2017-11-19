@@ -1,0 +1,7 @@
+
+*.pyc
+config.py
+damDeals.csv
+damDeals.tmp
+goldbox.xml
+TODO.py

@@ -1,0 +1,5 @@
+keyboard, 30
+alarm clock, 20
+nars, 35
+concealer, 35
+canelle, 35
