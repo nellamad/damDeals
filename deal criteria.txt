@@ -1,5 +1,4 @@
-keyboard, 30
-alarm clock, 20
-nars, 35
-concealer, 35
-canelle, 35
+alarm clock, 15
+nars concealer canelle, 35
+Oral-B Cross Action, 75
+PaCk batterY, 50

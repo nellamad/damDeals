@@ -19,6 +19,9 @@ GOLDBOX_CRITERIA = 'deal criteria.txt'
 CURATED_DEALS = 'damDeals.csv'
 TEMP_DEALS = 'damDeals.tmp'
 
+FETCHING_ENABLED = True
+EMAIL_ENABLED = True
+
 def getText(nodelist):
     rc = []
     for node in nodelist:
@@ -28,23 +31,23 @@ def getText(nodelist):
 
 def dam_Deals():
 	# download the goldbox deals to a file and then read
-	with urllib.request.urlopen(GOLDBOX_URL) as response, open(GOLDBOX_FILE, 'wb') as goldbox_out:
-		shutil.copyfileobj(response, goldbox_out)
+	if FETCHING_ENABLED:
+		with urllib.request.urlopen(GOLDBOX_URL) as response, open(GOLDBOX_FILE, 'wb') as goldbox_out:
+			shutil.copyfileobj(response, goldbox_out)
 	with open(GOLDBOX_FILE, 'r') as file:
 		xmldoc = minidom.parseString(file.read())
+
+	# extract the deals and the date that these deals were published (used for output)
+	pubDate = getText(xmldoc.getElementsByTagName('pubDate')[0].childNodes)
+	itemlist = xmldoc.getElementsByTagName('item') 
+	print("Loaded %d items published %s" % (itemlist.length, pubDate))
 
 	# load the criteria we'll use to filter the deals with
 	with open(GOLDBOX_CRITERIA, newline='') as file:
 		reader = csv.reader(file)
 		criteria = list(reader)
 
-	# extract the date that these deals were published (used for output)
-	pubDate = getText(xmldoc.getElementsByTagName('pubDate')[0].childNodes)
-
 	# process each deal item
-	itemlist = xmldoc.getElementsByTagName('item') 
-	print("Fetched %d items published %s" % (itemlist.length, pubDate))
-
 	with open(TEMP_DEALS, 'w', newline='') as tempDeals:
 		dealsWriter = csv.writer(tempDeals)
 		for s in itemlist:
@@ -56,8 +59,9 @@ def dam_Deals():
 					title = getText(s.getElementsByTagName('title')[0].childNodes).lower()
 
 					# check criteria
-					for keyword, maxPrice in criteria:
-						if keyword in title and float(price) <= float(maxPrice):
+					for keywords, maxPrice in criteria:
+						# check if every keyword is in the title and that the price is low enough
+						if all(map(lambda k: k.casefold() in title.casefold(), keywords.split(' '))) and float(price) <= float(maxPrice):
 							link = getText(s.getElementsByTagName('link')[0].childNodes)
 							#print("$%s,%s,%s" % (price, title, link))
 							dealsWriter.writerow([price, title, link])
@@ -72,8 +76,9 @@ def dam_Deals():
 		print("No new deals found...")
 	else:
 		shutil.copyfile(TEMP_DEALS, CURATED_DEALS)
-		send_deals()
-		print("New deals found.  Updated list has been sent!")
+		if EMAIL_ENABLED:
+			send_deals()
+		print("New deals found...")
 
 def send_deals():
 
@@ -90,5 +95,7 @@ def send_deals():
 	server.login(config.GMAIL_USER, config.GMAIL_PASSWORD)
 	server.send_message(message)
 	server.quit()
+
+	print('Updated list has been sent!')
 
 dam_Deals()
