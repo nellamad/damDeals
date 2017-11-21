@@ -4,14 +4,13 @@
 
 import urllib.request
 import shutil
+import os
 import csv
 import re
 from xml.dom import minidom
 import filecmp
 import config
-import smtplib
-from email.message import EmailMessage
-from pprint import pprint
+from damEmail import send_deals
 
 GOLDBOX_URL = 'https://rssfeeds.s3.amazonaws.com/goldbox'
 GOLDBOX_FILE = 'goldbox.xml'
@@ -67,35 +66,24 @@ def dam_Deals():
 							dealsWriter.writerow([price, title, link])
 							break
 
-	try:
-		open(CURATED_DEALS, 'x')
-	except FileExistsError:
-		print("Comparing with old deals...")
+	if os.path.getsize(TEMP_DEALS) > 0:
+		try:
+			open(CURATED_DEALS, 'x')
+		except FileExistsError:
+			print("Comparing with old deals...")
 
-	if filecmp.cmp(TEMP_DEALS, CURATED_DEALS, False):
-		print("No new deals found...")
+		if filecmp.cmp(TEMP_DEALS, CURATED_DEALS, False):
+			print("No new deals found...")
+		else:
+			print("New deals found...")
+			shutil.copyfile(TEMP_DEALS, CURATED_DEALS)
+			if EMAIL_ENABLED:
+				# email the deals that we've found, if there are any
+				if os.path.exists(CURATED_DEALS) and os.path.getsize(CURATED_DEALS) > 0:
+					send_deals(open(CURATED_DEALS))
 	else:
-		shutil.copyfile(TEMP_DEALS, CURATED_DEALS)
-		if EMAIL_ENABLED:
-			send_deals()
-		print("New deals found...")
+		print("No new deals found...")
 
-def send_deals():
 
-	# email the deals that we've found
-	with open(CURATED_DEALS) as deals:
-		message = EmailMessage()
-		message.set_content(deals.read())
-
-	message['Subject'] = 'Your Dam Deals'
-	message['From'] = config.GMAIL_USER
-	message['To'] = config.SUBSCRIBERS
-
-	server = smtplib.SMTP_SSL('smtp.gmail.com')
-	server.login(config.GMAIL_USER, config.GMAIL_PASSWORD)
-	server.send_message(message)
-	server.quit()
-
-	print('Updated list has been sent!')
 
 dam_Deals()
