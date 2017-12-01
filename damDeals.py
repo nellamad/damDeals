@@ -8,25 +8,18 @@ import os
 import csv
 import re
 from xml.dom import minidom
-import filecmp
 import config
+import pickle
 from damEmail import send_deals
 
 GOLDBOX_URL = 'https://rssfeeds.s3.amazonaws.com/goldbox'
 GOLDBOX_FILE = 'goldbox.xml'
 GOLDBOX_CRITERIA = 'deal criteria.txt'
-CURATED_DEALS = 'damDeals.csv'
+CURATED_DEALS = 'damDeals.p'
 TEMP_DEALS = 'damDeals.tmp'
 
 FETCHING_ENABLED = True
 EMAIL_ENABLED = True
-
-def getText(nodelist):
-    rc = []
-    for node in nodelist:
-        if node.nodeType == node.TEXT_NODE:
-            rc.append(node.data)
-    return ''.join(rc)
 
 def dam_Deals():
 	# download the goldbox deals to a file and then read
@@ -47,43 +40,49 @@ def dam_Deals():
 		criteria = list(reader)
 
 	# process each deal item
-	with open(TEMP_DEALS, 'w', newline='') as tempDeals:
-		dealsWriter = csv.writer(tempDeals)
-		for s in itemlist:
-			description = getText(s.getElementsByTagName('description')[0].childNodes).lower()
-			if description:
-				price = re.search('(?<=deal price: \$)\d+\.\d+', description)
-				if price:
-					price = price.group(0)
-					title = getText(s.getElementsByTagName('title')[0].childNodes).lower()
+	dealsDict = {}
+	for s in itemlist:
+		description = getText(s.getElementsByTagName('description')[0].childNodes).lower()
+		if description:
+			price = re.search('(?<=deal price: \$)\d+\.\d+', description)
+			if price:
+				price = price.group(0)
+				title = getText(s.getElementsByTagName('title')[0].childNodes).lower()
 
-					# check criteria
-					for keywords, maxPrice in criteria:
-						# check if every keyword is in the title and that the price is low enough
-						if all(map(lambda k: k.casefold() in title.casefold(), keywords.split(' '))) and float(price) <= float(maxPrice):
-							link = getText(s.getElementsByTagName('link')[0].childNodes)
-							#print("$%s,%s,%s" % (price, title, link))
-							dealsWriter.writerow([price, title, link])
-							break
-
-	if os.path.getsize(TEMP_DEALS) > 0:
-		try:
-			open(CURATED_DEALS, 'x')
-		except FileExistsError:
-			print("Comparing with old deals...")
-
-		if filecmp.cmp(TEMP_DEALS, CURATED_DEALS, False):
-			print("No new deals found...")
-		else:
-			print("New deals found...")
-			shutil.copyfile(TEMP_DEALS, CURATED_DEALS)
-			if EMAIL_ENABLED:
-				# email the deals that we've found, if there are any
-				if os.path.exists(CURATED_DEALS) and os.path.getsize(CURATED_DEALS) > 0:
-					send_deals(open(CURATED_DEALS))
-	else:
-		print("No new deals found...")
+				# check criteria
+				for keywords, maxPrice in criteria:
+					# check if every keyword is in the title and that the price is low enough
+					if all(map(lambda k: k.casefold() in title.casefold(), keywords.split(' '))) and float(price) <= float(maxPrice):
+						link = getText(s.getElementsByTagName('link')[0].childNodes)
+						#print("$%s,%s,%s" % (price, title, link))
+						dealsDict[title] = [price, link]
+						break
 
 
+	if bool(dealsDict):
+		if not os.path.exists(CURATED_DEALS) or not os.path.getsize(CURATED_DEALS) > 0:
+			with open(CURATED_DEALS, 'wb') as curatedDeals:
+				pickle.dump({}, curatedDeals)
+
+		with open(CURATED_DEALS, 'rb') as curatedDeals:
+			oldDeals = pickle.load(curatedDeals)
+			if any(map(lambda k: k not in oldDeals or oldDeals[k][0] != dealsDict[k][0], dealsDict.keys())):
+				print('New deals found...')
+				with open(CURATED_DEALS, 'wb') as curatedDeals:
+					pickle.dump(dealsDict, curatedDeals)
+				if EMAIL_ENABLED:
+					# email the deals that we've found, if there are any
+					send_deals(dealsDict)
+					return
+
+	print("No new deals found...")
+
+
+def getText(nodelist):
+    rc = []
+    for node in nodelist:
+        if node.nodeType == node.TEXT_NODE:
+            rc.append(node.data)
+    return ''.join(rc)
 
 dam_Deals()

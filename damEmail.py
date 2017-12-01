@@ -1,11 +1,11 @@
 import config
-import csv
+import pickle
 from tabulate import tabulate
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import smtplib
 
-def send_deals(deals_file):
+def send_deals(dealsDict):
 	headers = [['Price', 'Link']]
 	text = '{table}'
 	html = """
@@ -15,8 +15,9 @@ def send_deals(deals_file):
 		</body>
 	</html>
 	"""
-	reader = csv.reader(deals_file)
-	deals = list(reader)
+
+	# dealsDict is expected to have format such as {title: [price, link]}
+	deals = [(v[0], k, v[1]) for k,v in dealsDict.items()]
 	text = text.format(table=tabulate(headers + deals, headers='firstrow', tablefmt='grid'))
 	html = html.format(table=tabulate(
 		headers + list(map(lambda r: [
