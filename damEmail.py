@@ -20,11 +20,7 @@ def send_deals(dealsDict):
 	deals = [(v[0], k, v[1]) for k,v in dealsDict.items()]
 	text = text.format(table=tabulate(headers + deals, headers='firstrow', tablefmt='grid'))
 	html = html.format(table=tabulate(
-		headers + list(map(lambda r: [
-				r[0],
-				'<a href="{1}" target="_blank">{0}</a>'.format(r[1], r[2])
-			],
-			deals)),
+		headers +  [(r[0], '<a href="{1}" target="_blank">{0}</a>'.format(r[1], r[2])) for r in deals],
 		headers='firstrow',
 		tablefmt='html')
 	)

@@ -39,8 +39,8 @@ def dam_Deals():
 		reader = csv.reader(file)
 		criteria = list(reader)
 
+	currentDeals = {}
 	# process each deal item
-	dealsDict = {}
 	for s in itemlist:
 		description = getText(s.getElementsByTagName('description')[0].childNodes).lower()
 		if description:
@@ -54,25 +54,24 @@ def dam_Deals():
 					# check if every keyword is in the title and that the price is low enough
 					if all(map(lambda k: k.casefold() in title.casefold(), keywords.split(' '))) and float(price) <= float(maxPrice):
 						link = getText(s.getElementsByTagName('link')[0].childNodes)
-						#print("$%s,%s,%s" % (price, title, link))
-						dealsDict[title] = [price, link]
+						currentDeals[title] = [price, link]
 						break
 
 
-	if bool(dealsDict):
+	if bool(currentDeals):
 		if not os.path.exists(CURATED_DEALS) or not os.path.getsize(CURATED_DEALS) > 0:
 			with open(CURATED_DEALS, 'wb') as curatedDeals:
 				pickle.dump({}, curatedDeals)
 
 		with open(CURATED_DEALS, 'rb') as curatedDeals:
 			oldDeals = pickle.load(curatedDeals)
-			if any(map(lambda k: k not in oldDeals or oldDeals[k][0] != dealsDict[k][0], dealsDict.keys())):
+			if any(map(lambda k: k not in oldDeals or oldDeals[k][0] != currentDeals[k][0], currentDeals.keys())):
 				print('New deals found...')
 				with open(CURATED_DEALS, 'wb') as curatedDeals:
-					pickle.dump(dealsDict, curatedDeals)
+					pickle.dump(currentDeals, curatedDeals)
 				if EMAIL_ENABLED:
 					# email the deals that we've found, if there are any
-					send_deals(dealsDict)
+					send_deals(currentDeals)
 					return
 
 	print("No new deals found...")
