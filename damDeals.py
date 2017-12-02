@@ -12,69 +12,70 @@ import config
 import pickle
 from damEmail import send_deals
 
-GOLDBOX_URL = 'https://rssfeeds.s3.amazonaws.com/goldbox'
-GOLDBOX_FILE = 'goldbox.xml'
-GOLDBOX_CRITERIA = 'deal criteria.txt'
-CURATED_DEALS = 'damDeals.p'
-TEMP_DEALS = 'damDeals.tmp'
 
-FETCHING_ENABLED = True
-EMAIL_ENABLED = True
 
 def dam_Deals():
-	# download the goldbox deals to a file and then read
-	if FETCHING_ENABLED:
-		with urllib.request.urlopen(GOLDBOX_URL) as response, open(GOLDBOX_FILE, 'wb') as goldbox_out:
-			shutil.copyfileobj(response, goldbox_out)
-	with open(GOLDBOX_FILE, 'r') as file:
-		xmldoc = minidom.parseString(file.read())
+    GOLDBOX_URL = 'https://rssfeeds.s3.amazonaws.com/goldbox'
+    GOLDBOX_FILE = 'goldbox.xml'
+    GOLDBOX_CRITERIA = 'deal criteria.txt'
+    CURATED_DEALS = 'damDeals.p'
+    FETCHING_ENABLED = True
+    EMAIL_ENABLED = True
 
-	# extract the deals and the date that these deals were published (used for output)
-	pubDate = getText(xmldoc.getElementsByTagName('pubDate')[0].childNodes)
-	itemlist = xmldoc.getElementsByTagName('item') 
-	print("Loaded %d items published %s" % (itemlist.length, pubDate))
+    # download the goldbox deals to a file and then read
+    if FETCHING_ENABLED:
+        with urllib.request.urlopen(GOLDBOX_URL) as response, open(GOLDBOX_FILE, 'wb') as goldbox_out:
+            shutil.copyfileobj(response, goldbox_out)
+    with open(GOLDBOX_FILE, 'r') as file:
+        xmldoc = minidom.parseString(file.read())
 
-	# load the criteria we'll use to filter the deals with
-	with open(GOLDBOX_CRITERIA, newline='') as file:
-		reader = csv.reader(file)
-		criteria = list(reader)
+    # extract the deals and the date that these deals were published (used for output)
+    pubDate = getText(xmldoc.getElementsByTagName('pubDate')[0].childNodes)
+    itemlist = xmldoc.getElementsByTagName('item') 
+    print("Loaded %d items published %s" % (itemlist.length, pubDate))
 
-	currentDeals = {}
-	# process each deal item
-	for s in itemlist:
-		description = getText(s.getElementsByTagName('description')[0].childNodes).lower()
-		if description:
-			price = re.search('(?<=deal price: \$)\d+\.\d+', description)
-			if price:
-				price = price.group(0)
-				title = getText(s.getElementsByTagName('title')[0].childNodes).lower()
+    # load the criteria we'll use to filter the deals with
+    with open(GOLDBOX_CRITERIA, newline='') as file:
+        reader = csv.reader(file)
+        criteria = list(reader)
 
-				# check criteria
-				for keywords, maxPrice in criteria:
-					# check if every keyword is in the title and that the price is low enough
-					if all(map(lambda k: k.casefold() in title.casefold(), keywords.split(' '))) and float(price) <= float(maxPrice):
-						link = getText(s.getElementsByTagName('link')[0].childNodes)
-						currentDeals[title] = [price, link]
-						break
+    currentDeals = {}
+    # build up a collection of curated deals using our criteria from above
+    for s in itemlist:
+        description = getText(s.getElementsByTagName('description')[0].childNodes).lower()
+        if description:
+            price = re.search('(?<=deal price: \$)\d+\.\d+', description)
+            if price:
+                price = price.group(0)
+                title = getText(s.getElementsByTagName('title')[0].childNodes).lower()
 
+                # check criteria
+                for keywords, maxPrice in criteria:
+                    # check if every keyword is in the title and that the price is low enough
+                    if all([key.casefold() in title.casefold() for key in keywords.split(' ')]) and float(price) <= float(maxPrice):
+                        link = getText(s.getElementsByTagName('link')[0].childNodes)
+                        currentDeals[title] = [price, link]
+                        break
 
-	if bool(currentDeals):
-		if not os.path.exists(CURATED_DEALS) or not os.path.getsize(CURATED_DEALS) > 0:
-			with open(CURATED_DEALS, 'wb') as curatedDeals:
-				pickle.dump({}, curatedDeals)
+    # if there are any new deals, send them to our subscribers
+    if bool(currentDeals):
+        if not os.path.exists(CURATED_DEALS) or not os.path.getsize(CURATED_DEALS) > 0:
+            with open(CURATED_DEALS, 'wb') as curatedDeals:
+                pickle.dump({}, curatedDeals)
 
-		with open(CURATED_DEALS, 'rb') as curatedDeals:
-			oldDeals = pickle.load(curatedDeals)
-			if any(map(lambda k: k not in oldDeals or oldDeals[k][0] != currentDeals[k][0], currentDeals.keys())):
-				print('New deals found...')
-				with open(CURATED_DEALS, 'wb') as curatedDeals:
-					pickle.dump(currentDeals, curatedDeals)
-				if EMAIL_ENABLED:
-					# email the deals that we've found, if there are any
-					send_deals(currentDeals)
-					return
+        with open(CURATED_DEALS, 'rb') as curatedDeals:
+            oldDeals = pickle.load(curatedDeals)
+            print('Comparing with old deals...')
+            if any(map(lambda k: k not in oldDeals or oldDeals[k][0] != currentDeals[k][0], currentDeals.keys())):
+                print('New deals found...')
+                with open(CURATED_DEALS, 'wb') as curatedDeals:
+                    pickle.dump(currentDeals, curatedDeals)
+                if EMAIL_ENABLED:
+                    # email the deals that we've found, if there are any
+                    send_deals(currentDeals)
+                    return
 
-	print("No new deals found...")
+    print("No new deals found...")
 
 
 def getText(nodelist):
