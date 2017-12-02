@@ -1,0 +1,18 @@
+[[source]]
+
+url = "https://pypi.python.org/simple"
+verify_ssl = true
+name = "pypi"
+
+
+[packages]
+
+APScheduler = "==3.4.0"
+python-dateutil = "==2.6.1"
+pytz = "==2017.3"
+tabulate = "==0.8.1"
+tzlocal = "==1.4"
+
+
+[dev-packages]
+
