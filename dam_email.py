@@ -8,7 +8,8 @@ from tabulate import tabulate
 import config
 
 def send_deals(deals):
-    """Creates an email from the given deals, then sends them to subscribers."""
+    """Creates an email from the given deals, then sends them to subscribers.
+    Meant to use the Deal class from the dam_deals module"""
     headers = [['Price', 'Link']]
     text = '{table}'
     html = """
@@ -19,8 +20,7 @@ def send_deals(deals):
     </html>
     """
 
-    # deals is expected to have format such as {title: [price, link]}
-    deals = [(v[0], k, v[1]) for k, v in deals.items()]
+    deals = [(deal.price, deal.title, deal.link) for deal in deals.values()]
     text = text.format(table=tabulate(headers + deals, headers='firstrow', tablefmt='grid'))
     html = html.format(table=tabulate(
         headers +  [(r[0], '<a href="{1}" target="_blank">{0}</a>'.format(r[1], r[2])) for r in deals],

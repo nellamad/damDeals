@@ -12,6 +12,13 @@ from xml.dom import minidom
 import pickle
 import dam_email
 
+class Deal:
+    """Holds information about a deal"""
+    def __init__(self, price, title, link):
+        self.price = price
+        self.title = title
+        self.link = link
+
 def dam_deals():
     """ Retrieves goldbox deals, extracts a curated list
     and then sends emails if necessary."""
@@ -57,7 +64,7 @@ def dam_deals():
                         link = get_text(item.getElementsByTagName('link')[0].childNodes)
                         # be careful about changing the structure of this dictionary because
                         # the emailer depends on this structure when unpacking the deals
-                        current_deals[title] = [price, link]
+                        current_deals[title] = Deal(price, title, link)
                         break
 
     # if there are any new deals, send them to our subscribers
@@ -71,7 +78,7 @@ def dam_deals():
         with open(old_deals_path, 'rb') as old_deals_file:
             old_deals = pickle.load(old_deals_file)
             print('Comparing with old deals...')
-            if any(map(lambda k: k not in old_deals or old_deals[k][0] != current_deals[k][0], current_deals.keys())):
+            if any([key not in old_deals or old_deals[key].price != current_deals[key].price for key in current_deals.keys()]):
                 print('New deals found...')
 
                 # store the current deals for the next execution
