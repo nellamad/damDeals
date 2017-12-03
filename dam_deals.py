@@ -9,15 +9,11 @@ import os
 import csv
 import re
 from xml.dom import minidom
+from collections import namedtuple
 import pickle
 import dam_email
 
-class Deal:
-    """Holds information about a deal"""
-    def __init__(self, price, title, link):
-        self.price = price
-        self.title = title
-        self.link = link
+Deal = namedtuple('Deal', ['price', 'title', 'link'])
 
 def dam_deals():
     """ Retrieves goldbox deals, extracts a curated list
@@ -78,7 +74,7 @@ def dam_deals():
         with open(old_deals_path, 'rb') as old_deals_file:
             old_deals = pickle.load(old_deals_file)
             print('Comparing with old deals...')
-            if any([key not in old_deals or old_deals[key].price != current_deals[key].price for key in current_deals.keys()]):
+            if any([key not in old_deals or old_deals[key].price != deal.price for key, deal in current_deals.items()]):
                 print('New deals found...')
 
                 # store the current deals for the next execution
