@@ -17,26 +17,26 @@ def dam_deals():
     and then sends emails if necessary."""
 
     goldbox_url = 'https://rssfeeds.s3.amazonaws.com/goldbox'
-    goldbox_file = 'goldbox.xml'
-    goldbox_criteria = 'deal criteria.txt'
-    curated_deals = 'dam_deals.p'
+    goldbox_path = 'goldbox.xml'
+    goldbox_criteria_path = 'deal criteria.txt'
+    old_deals_path = 'dam_deals.p'
     fetching_enabled = True
     email_enabled = True
 
     # download the goldbox deals to a file and then read
     if fetching_enabled:
-        with urllib.request.urlopen(goldbox_url) as response, open(goldbox_file, 'wb') as goldbox_out:
-            shutil.copyfileobj(response, goldbox_out)
-    with open(goldbox_file, 'r') as file:
-        xmldoc = minidom.parseString(file.read())
+        with urllib.request.urlopen(goldbox_url) as response, open(goldbox_path, 'wb') as goldbox_file:
+            shutil.copyfileobj(response, goldbox_file)
+    with open(goldbox_path, 'r') as goldbox_file:
+        xml_doc = minidom.parseString(goldbox_file.read())
 
     # extract the deals and the date that these deals were published (used for output)
-    pub_date = get_text(xmldoc.getElementsByTagName('pubDate')[0].childNodes)
-    items = xmldoc.getElementsByTagName('item')
+    pub_date = get_text(xml_doc.getElementsByTagName('pubDate')[0].childNodes)
+    items = xml_doc.getElementsByTagName('item')
     print("Loaded %d items published %s" % (items.length, pub_date))
 
     # load the criteria we'll use to filter the deals with
-    with open(goldbox_criteria, newline='') as file:
+    with open(goldbox_criteria_path, newline='') as file:
         reader = csv.reader(file)
         criteria = list(reader)
 
@@ -45,7 +45,7 @@ def dam_deals():
     for item in items:
         description = get_text(item.getElementsByTagName('description')[0].childNodes).lower()
         if description:
-            price = re.search('(?<=deal price: \$)\d+\.\d+', description)
+            price = re.search(r'(?<=deal price: \$)\d+\.\d+', description)
             if price:
                 price = price.group(0)
                 title = get_text(item.getElementsByTagName('title')[0].childNodes).lower()
@@ -62,17 +62,22 @@ def dam_deals():
 
     # if there are any new deals, send them to our subscribers
     if bool(current_deals):
-        if not os.path.exists(curated_deals) or not os.path.getsize(curated_deals) > 0:
-            with open(curated_deals, 'wb') as curated_deals:
-                pickle.dump({}, curated_deals)
+        # initialize/serialize a collection for the old deals, if necessary
+        if not os.path.exists(old_deals_path) or not os.path.getsize(old_deals_path) > 0:
+            with open(old_deals_path, 'wb') as old_deals:
+                pickle.dump({}, old_deals)
 
-        with open(curated_deals, 'rb') as curated_deals:
-            old_deals = pickle.load(curated_deals)
+        # load and compare old deals with current deals, send emails if necessary
+        with open(old_deals_path, 'rb') as old_deals_file:
+            old_deals = pickle.load(old_deals_file)
             print('Comparing with old deals...')
             if any(map(lambda k: k not in old_deals or old_deals[k][0] != current_deals[k][0], current_deals.keys())):
                 print('New deals found...')
-                with open(curated_deals, 'wb') as curated_deals:
-                    pickle.dump(current_deals, curated_deals)
+
+                # store the current deals for the next execution
+                with open(old_deals_path, 'wb') as old_deals_file:
+                    pickle.dump(current_deals, old_deals_file)
+
                 if email_enabled:
                     dam_email.send_deals(current_deals)
                     return

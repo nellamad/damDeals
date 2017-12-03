@@ -9,7 +9,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 if __name__ == '__main__':
     SCHEDULER = BackgroundScheduler()
     # scheduler.add_job(tick, 'interval', minutes=1)
-    SCHEDULER.add_job(dam_deals.dam_deals(), 'interval', hours=1)
+    SCHEDULER.add_job(dam_deals.dam_deals, 'interval', hours=1)
     SCHEDULER.start()
     print('Press Ctrl+{0} to exit'.format('Break' if os.name == 'nt' else 'C'))
 
