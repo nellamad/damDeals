@@ -3,6 +3,7 @@ Retrieves Amazon Goldbox deals and sends a curated
 list to subscribers
 """
 
+import argparse
 import urllib.request
 import shutil
 import os
@@ -15,7 +16,7 @@ import dam_email
 
 Deal = namedtuple('Deal', ['price', 'title', 'link'])
 
-def dam_deals():
+def dam_deals(args):
     """ Retrieves goldbox deals, extracts a curated list
     and then sends emails if necessary."""
 
@@ -23,11 +24,9 @@ def dam_deals():
     goldbox_path = 'goldbox.xml'
     goldbox_criteria_path = 'deal criteria.txt'
     old_deals_path = 'dam_deals.p'
-    fetching_enabled = True
-    email_enabled = True
 
     # download the goldbox deals to a file and then read
-    if fetching_enabled:
+    if not args.cached_deals:
         with urllib.request.urlopen(goldbox_url) as response, open(goldbox_path, 'wb') as goldbox_file:
             shutil.copyfileobj(response, goldbox_file)
     with open(goldbox_path, 'r') as goldbox_file:
@@ -36,7 +35,7 @@ def dam_deals():
     # extract the deals and the date that these deals were published (used for output)
     pub_date = get_text(xml_doc.getElementsByTagName('pubDate')[0].childNodes)
     items = xml_doc.getElementsByTagName('item')
-    print("Loaded %d items published %s" % (items.length, pub_date))
+    print("Loaded %d items%s published %s." % (items.length, ' from cache' if args.cached_deals else '', pub_date))
 
     # load the criteria we'll use to filter the deals with
     with open(goldbox_criteria_path, newline='') as file:
@@ -58,8 +57,6 @@ def dam_deals():
                     # check if every keyword is in the title and that the price is low enough
                     if all([key.casefold() in title.casefold() for key in keywords.split(' ')]) and float(price) <= float(max_price):
                         link = get_text(item.getElementsByTagName('link')[0].childNodes)
-                        # be careful about changing the structure of this dictionary because
-                        # the emailer depends on this structure when unpacking the deals
                         current_deals[title] = Deal(price, title, link)
                         break
 
@@ -81,8 +78,8 @@ def dam_deals():
                 with open(old_deals_path, 'wb') as old_deals_file:
                     pickle.dump(current_deals, old_deals_file)
 
-                if email_enabled:
-                    dam_email.send_deals(current_deals)
+                if not args.suppress_emails:
+                    dam_email.send_deals(args, current_deals)
                     return
 
     print("No new deals found...")
@@ -95,6 +92,3 @@ def get_text(nodelist):
         if node.nodeType == node.TEXT_NODE:
             texts.append(node.data)
     return ''.join(texts)
-
-
-dam_deals()
