@@ -68,11 +68,12 @@ def dam_deals(args):
 
         # load and compare old deals with current deals, send emails if necessary
         with open(old_deals_path, 'rb') as old_deals_file:
-            if args.use_cache:
+            if args.forget_cache:
+                old_deals = []
+            else:
                 old_deals = pickle.load(old_deals_file)
                 print('Comparing with old deals...')
-            else:
-                old_deals = []
+                
             if any([key not in old_deals or old_deals[key].price != deal.price for key, deal in current_deals.items()]):
                 print('New deals found...')
                 if args.verbose:
