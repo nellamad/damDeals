@@ -3,7 +3,7 @@
 A Python scraper that periodically filters Amazon Goldbox RSS feed for deals matching a set of custom criteria.  Sends email notifications when new deals are found.
 Requires login credentials to an SMTP server to send emails.
 
-##Example usage:
+## Example usage:
 
 Subscribers are specified in [config.py](https://github.com/nellamad/dam_deals/blob/master/config.py).
 
