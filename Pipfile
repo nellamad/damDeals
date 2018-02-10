@@ -7,12 +7,12 @@ name = "pypi"
 
 [packages]
 
-apscheduler = "==3.4.0"
+APScheduler = "==3.4.0"
+pylint = "*"
 python-dateutil = "==2.6.1"
 pytz = "==2017.3"
 tabulate = "==0.8.1"
 tzlocal = "==1.4"
-pylint = "*"
 
 
 [dev-packages]
