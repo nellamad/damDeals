@@ -26,16 +26,15 @@ def dam_deals(args):
     old_deals_path = 'dam_deals.p'
 
     # download the goldbox deals to a file and then read
-    if not args.cached_deals:
-        with urllib.request.urlopen(goldbox_url) as response, open(goldbox_path, 'wb') as goldbox_file:
-            shutil.copyfileobj(response, goldbox_file)
+    with urllib.request.urlopen(goldbox_url) as response, open(goldbox_path, 'wb') as goldbox_file:
+        shutil.copyfileobj(response, goldbox_file)
     with open(goldbox_path, 'r') as goldbox_file:
         xml_doc = minidom.parseString(goldbox_file.read())
 
     # extract the deals and the date that these deals were published (used for output)
     pub_date = get_text(xml_doc.getElementsByTagName('pubDate')[0].childNodes)
     items = xml_doc.getElementsByTagName('item')
-    print("Loaded %d items%s published %s." % (items.length, ' from cache' if args.cached_deals else '', pub_date))
+    print("Loaded %d items published %s." % (items.length, pub_date))
 
     # load the criteria we'll use to filter the deals with
     with open(goldbox_criteria_path, newline='') as file:
@@ -69,10 +68,15 @@ def dam_deals(args):
 
         # load and compare old deals with current deals, send emails if necessary
         with open(old_deals_path, 'rb') as old_deals_file:
-            old_deals = pickle.load(old_deals_file)
-            print('Comparing with old deals...')
+            if args.use_cache:
+                old_deals = pickle.load(old_deals_file)
+                print('Comparing with old deals...')
+            else:
+                old_deals = []
             if any([key not in old_deals or old_deals[key].price != deal.price for key, deal in current_deals.items()]):
                 print('New deals found...')
+                if args.verbose:
+                    print(current_deals)
 
                 # store the current deals for the next execution
                 with open(old_deals_path, 'wb') as old_deals_file:
