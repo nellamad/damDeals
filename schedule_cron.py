@@ -26,13 +26,13 @@ if __name__ == '__main__':
     else:
         dam_deals.dam_deals(args)
         if args.hours or args.minutes:
-            print('Scheduling needed')
             scheduler = BackgroundScheduler()
             if args.hours:
-                scheduler.add_job(dam_deals.dam_deals, 'interval', args=args, hours=args.hours)
+                scheduler.add_job(dam_deals.dam_deals, 'interval', args=[args] if args is not None else [], hours=args.hours)
             elif args.minutes:
-                scheduler.add_job(dam_deals.dam_deals, 'interval', args=args, minutes=args.minutes)
-
+                scheduler.add_job(dam_deals.dam_deals, 'interval', args=[args] if args is not None else [], minutes=args.minutes)
+            scheduler.start()
+            print('Schedule started...')
             print('Press Ctrl+{0} to exit'.format('Break' if os.name == 'nt' else 'C'))
             try:
                 # This is here to simulate application activity (which keeps the main thread alive).
