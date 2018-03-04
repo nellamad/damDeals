@@ -1,1 +1,5 @@
-SUBSCRIBERS = 'subscriber1@foo.com, subscriber2@bar.com'
+subscribers = 'foo@bar.com'
+goldbox_url = 'https://rssfeeds.s3.amazonaws.com/goldbox'
+goldbox_path = 'goldbox.xml'
+goldbox_criteria_path = 'deal criteria.txt'
+old_deals_path = 'dam_deals.p'

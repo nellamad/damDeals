@@ -1,12 +1,12 @@
 """
 Email module which handles the crafting and sending of emails.
 """
-import argparse
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import smtplib
 from tabulate import tabulate
 import config
+
 
 def send_deals(args, deals):
     """Creates an email from the given deals, then sends them to subscribers.
@@ -33,7 +33,7 @@ def send_deals(args, deals):
     message = MIMEMultipart('alternative', None, [MIMEText(text), MIMEText(html, 'html')])
     message['Subject'] = 'Your Dam Deals'
     message['From'] = args.user
-    message['To'] = config.SUBSCRIBERS
+    message['To'] = config.subscribers
 
     server = smtplib.SMTP_SSL(args.smtp)
     server.login(args.user, args.password)
