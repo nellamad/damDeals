@@ -26,8 +26,8 @@ dam_deals.py -f -u foo@bar.com -p p4ssw0rd --hours 1
 Full usage:
 ```
 dam_deals.py --help
-usage: schedule_cron.py [-h] [-v] [-f] [-s] [--smtp SMTP] [-u USER]
-                        [-p PASSWORD] [--hours HOURS | --minutes MINUTES]
+usage: dam_deals.py [-h] [-v] [-f] [-s] [--smtp SMTP] [-u USER] [-p PASSWORD]
+                    [--hours HOURS | --minutes MINUTES]
 
 optional arguments:
   -h, --help            show this help message and exit
