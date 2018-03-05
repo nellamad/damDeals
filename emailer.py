@@ -9,9 +9,7 @@ import config
 
 
 def send_deals(args, deals):
-    """Creates an email from the given deals, then sends them to subscribers.
-    Meant to use the Deal class from the dam_deals module"""
-
+    # craft email
     headers = [['Price', 'Link']]
     text = '{table}'
     html = """
@@ -21,7 +19,6 @@ def send_deals(args, deals):
         </body>
     </html>
     """
-
     deals = [(deal.price, deal.title, deal.link) for deal in deals.values()]
     text = text.format(table=tabulate(headers + deals, headers='firstrow', tablefmt='grid'))
     html = html.format(table=tabulate(
@@ -30,6 +27,7 @@ def send_deals(args, deals):
         tablefmt='html')
                       )
 
+    # send email to subscribers
     message = MIMEMultipart('alternative', None, [MIMEText(text), MIMEText(html, 'html')])
     message['Subject'] = 'Your Dam Deals'
     message['From'] = args.user

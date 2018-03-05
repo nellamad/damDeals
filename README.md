@@ -9,23 +9,23 @@ Subscribers are specified in [config.py](https://github.com/nellamad/dam_deals/b
 
 Runs the scraper once and sends emails to subscribers if new deals have been found since the last run.
 ```
-schedule_cron.py -u foo@bar.com -p p4ssw0rd
+dam_deals.py -u foo@bar.com -p p4ssw0rd
 ```
 
 Runs the scraper immediately and once per hour and sends emails to subscribers if new deals have been found since the last run.
 ```
-schedule_cron.py -u foo@bar.com -p p4ssw0rd --hours 1
+dam_deals.py -u foo@bar.com -p p4ssw0rd --hours 1
 ```
 
 Runs the scraper immediately and once per hour.  Always sends emails to subscribers, even no new deals were found.
 ```
-schedule_cron.py -f -u foo@bar.com -p p4ssw0rd --hours 1
+dam_deals.py -f -u foo@bar.com -p p4ssw0rd --hours 1
 ```
 
 
 Full usage:
 ```
-schedule_cron.py --help
+dam_deals.py --help
 usage: schedule_cron.py [-h] [-v] [-f] [-s] [--smtp SMTP] [-u USER]
                         [-p PASSWORD] [--hours HOURS | --minutes MINUTES]
 
