@@ -23,9 +23,9 @@ def dam_deals(args):
     # Build up a collection of curated deals using the criteria from above
     def satisfies_a_criteria(deal):
         # check if the deal all of the criteria's keywords and is below the maximum price
-        any([all([keyword.casefold() in deal.title.casefold() for keyword in keywords.split(' ')])
-            and float(deal.price) <= float(max_price)
-            for keywords, max_price in criteria])
+        return any([all([keyword.casefold() in deal.title.casefold() for keyword in keywords.split(' ')])
+                    and float(deal.price) <= float(max_price)
+                    for keywords, max_price in criteria])
     curated_deals = {title: deal for title, deal in deals.items() if satisfies_a_criteria(deal)}
 
     # Compare with cached deals and send emails if there are new deals

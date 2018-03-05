@@ -1,5 +1,5 @@
 """
-Entry point to Dam Deals.  Initiates and schedules the executions of the core program logic.
+Entry point to dam_deals.  Initiates and schedules the executions of the core program logic.
 """
 import argparse
 import time

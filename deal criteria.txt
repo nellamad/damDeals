@@ -7,3 +7,5 @@ cetaphil, 15
 goose duvet, 60
 mouse, 30
 american crew cream, 20
+LED, 30
+kindle, 200
