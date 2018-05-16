@@ -26,13 +26,13 @@ if __name__ == '__main__':
         print('Please provide --user and --password arguments or enable the --suppress_emails option')
         parser.print_usage()
     else:
-        core.dam_deals(args)
+        core.main(args)
         if args.hours or args.minutes:
             scheduler = BackgroundScheduler()
             if args.hours:
-                scheduler.add_job(core.dam_deals, 'interval', args=[args] if args is not None else [], hours=args.hours)
+                scheduler.add_job(core.main, 'interval', args=[args] if args is not None else [], hours=args.hours)
             elif args.minutes:
-                scheduler.add_job(core.dam_deals, 'interval', args=[args] if args is not None else [], minutes=args.minutes)
+                scheduler.add_job(core.main, 'interval', args=[args] if args is not None else [], minutes=args.minutes)
             scheduler.start()
             print('Schedule started...')
             print('Press Ctrl+{0} to exit'.format('Break' if os.name == 'nt' else 'C'))

@@ -16,24 +16,28 @@ pipenv run python dam_deals.py -u foo@bar.com -p p4ssw0rd
 
 ## Example usage:
 
-Subscribers are specified in [config.py](https://github.com/nellamad/dam_deals/blob/master/config.py).
-
 Activate this project's virtualenv
 ```
 pipenv shell
 ```
 
-Runs the scraper once and sends emails to subscribers if new deals have been found since the last run.
+Runs the scraper once without email or knowledge of previous runs (no caching)
+
+```
+python dam_deals.py -s -f
+```
+
+Runs the scraper once and sends emails to [subscribers](https://github.com/nellamad/dam_deals/blob/master/config.py) if new deals have been found since the last run.
 ```
 python dam_deals.py -u foo@bar.com -p p4ssw0rd
 ```
 
-Runs the scraper immediately and once per hour and sends emails to subscribers if new deals have been found since the last run.
+Runs the scraper immediately and once per hour.  Send emails to [subscribers](https://github.com/nellamad/dam_deals/blob/master/config.py) if new deals have been found since the last run.
 ```
 python dam_deals.py -u foo@bar.com -p p4ssw0rd --hours 1
 ```
 
-Runs the scraper immediately and once per hour.  Always sends emails to subscribers, even no new deals were found.
+Runs the scraper immediately and once per hour.  Each run has no knowledge of previous runs.
 ```
 python dam_deals.py -f -u foo@bar.com -p p4ssw0rd --hours 1
 ```
@@ -48,8 +52,7 @@ usage: dam_deals.py [-h] [-v] [-f] [-s] [--smtp SMTP] [-u USER] [-p PASSWORD]
 optional arguments:
   -h, --help            show this help message and exit
   -v, --verbose         increase output verbosity
-  -f, --forget_cache    disregard cached deals when deciding whether to send
-                        emails
+  -f, --forget_cache    disregard cached deals from previous executions
   -s, --suppress_emails
                         suppress email sending
   --smtp SMTP           SMTP email server (default:smtp.gmail.com)

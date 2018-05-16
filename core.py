@@ -6,11 +6,12 @@ import os
 import csv
 import config
 from data_retrieval import get_and_parse_deals
+from pprint import pprint
 import pickle
 from emailer import send_deals
 
 
-def dam_deals(args):
+def main(args):
     # Retrieve raw deals
     (deals, publish_date) = get_and_parse_deals()
     print("Loaded %d items published %s." % (len(deals), publish_date))
@@ -47,19 +48,22 @@ def cache_and_email(args, curated_deals):
             else:
                 old_deals = pickle.load(old_deals_file)
                 print('Comparing with old deals...')
-
-            if any([deal.title not in old_deals or old_deals[deal.title].price != deal.price for deal in curated_deals]):
-                print('New deals found...')
                 if args.verbose:
-                    print(curated_deals)
+                    pprint([(deal.price, deal.title) for deal in old_deals.values()])
+
+            if any([deal.title not in old_deals or old_deals[deal.title].price != deal.price for deal in curated_deals.values()]):
+                print('New deals found...')
 
                 # store the current deals for the next execution
                 with open(old_deals_path, 'wb') as old_deals_file:
                     pickle.dump(curated_deals, old_deals_file)
 
-                if not args.suppress_emails:
+                if args.suppress_emails:
+                    pprint([(deal.price, deal.title) for deal in curated_deals.values()])
+                else:
                     send_deals(args, curated_deals)
-                    return
+
+                return
 
     print("No new deals found...")
 
